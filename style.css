@@ -1,0 +1,40 @@
+.sericomic img {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin: 10px auto;
+}
+.sericomic .sericomic-spacer {
+	padding: min(10vw, 150px) 0;
+}
+.sericomic .sericomic-buttonbar {
+	text-align: center;
+}
+.sericomic .sericomic-button, .sericomic .sericomic-disabledbutton {
+	/* background: #007588;
+	color: white;
+	display: inline-block;
+	text-align: center;
+	padding: 10px 30px;
+	font-size: 18px;
+	text-decoration: none;
+	width: fit-content; */
+	cursor: pointer;
+}
+.sericomic .sericomic-disabledbutton {
+	/* background: #777;
+	color: #ddd; */
+	cursor: not-allowed;
+}
+
+.sericomic select {
+	font-size: inherit;
+	font-family: inherit;
+}
+
+/* @media screen and (max-width: 600px) {
+	.sericomic .sericomic-button, .sericomic .sericomic-disabledbutton {
+		padding: 1rem 0.9rem;
+		margin: 0 -0.4rem;
+	}
+} */
