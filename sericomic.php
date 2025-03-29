@@ -19,19 +19,16 @@ require_once __DIR__ . '/sericomic-config.php';
 
 function sericomic_shortcode( $atts ) {
 	$page = sericomic_current_page();
-	$chapter_html = null;
-	$cachebuster = '?v=' . $page['lastUpdated'];
+	$cachebuster = '?v=' . $page['comicLastUpdated'];
+	$page_html = null;
 	if ( $page ) {
-		$dir = $page['chapter']['dir'];
-		$file = $page['file'];
-		$url = SERICOMIC_UPLOADS_URL . "chapters/$dir/$file";
-		$chapter_html = '<img class="sericomic-image" src="' . $url . '" width="' . $page['width'] . '" height="' . $page['height'] . '" alt="comic page" />';
+		$page_html = '<img class="sericomic-image" src="' . $page['img'] . '" width="' . $page['width'] . '" height="' . $page['height'] . '" alt="comic page" />';
 	}
 
 	return '<style>' . file_get_contents( __DIR__ . '/style.css' ) . '</style>' . "\n" .
-		'<div class="sericomic">' . ($chapter_html ?? '<div class="sericomic-buttonbar"><p><select class="sericomic-chapters" value="ch1"><option value="ch1" selected="">Chapter 1 - Chapter</option></select> <select class="sericomic-pages" value="ch1"><option value="ch1" selected="">Page 1</option></select></p><button disabled="" class="sericomic-disabledbutton"><i aria-hidden="true" class="fas fa-chevron-left"></i> Previous Page</button> <button class="sericomic-button" data-page="ch1/p2">Next Page <i aria-hidden="true" class="fas fa-chevron-right"></i></button></div><p>[Comic goes here]</p>') . '</div>' . "\n" .
+		'<div class="sericomic">' . ($page_html ?? '<div class="sericomic-buttonbar"><p><select class="sericomic-chapters" value="ch1"><option value="ch1" selected="">Chapter 1</option></select> <select class="sericomic-pages" value="ch1"><option value="ch1" selected="">Page 1</option></select></p><button disabled="" class="sericomic-disabledbutton"><i aria-hidden="true" class="fas fa-chevron-left"></i> Previous Page</button> <button class="sericomic-button" data-page="ch1/p2">Next Page <i aria-hidden="true" class="fas fa-chevron-right"></i></button></div><p>[Comic goes here]</p>') . '</div>' . "\n" .
 		'<script src="' . esc_url( SERICOMIC_UPLOADS_URL . 'sericomic-data.js' . $cachebuster ) . '"></script>' . "\n" .
-		'<script src="' . esc_url( plugins_url( '/sericomic-viewer.js?', __FILE__ ) ) . '"></script>' . "\n" .
+		'<script src="' . esc_url( plugins_url( '/sericomic-viewer.js?v2', __FILE__ ) ) . '"></script>' . "\n" .
 		'<script>const sericomic = new Sericomic(document.querySelector(\'.sericomic\'), sericomicData);</script>';
 }
 
@@ -61,7 +58,7 @@ $sericomic_data = null;
 function sericomic_get( ?string $comicpageid ): ?array {
 	global $sericomic_data;
 	if ( ! $sericomic_data ) {
-		$upload_dir = wp_upload_dir(); 
+		$upload_dir = wp_upload_dir();
 		$json_text = file_get_contents( $upload_dir['basedir'] . '/sericomic/sericomic-data.json' );
 		$sericomic_data = json_decode( $json_text, true );
 	}
@@ -96,7 +93,7 @@ function sericomic_get( ?string $comicpageid ): ?array {
 	}
 
 	$page_data['chapter'] = $chapter_data;
-	$page_data['lastUpdated'] = $sericomic_data['lastUpdated'];
+	$page_data['comicLastUpdated'] = $sericomic_data['lastUpdated'];
 
 	return $page_data;
 }
@@ -132,6 +129,21 @@ function sericomic_rest_update( WP_REST_Request $request ) {
 	return new WP_REST_Response( [ 'git_output' => $git_output ], 200 );
 }
 
+function sericomic_feed() {
+	require_once __DIR__ . '/sericomic-generate-rss.php';
+}
+
+function sericomic_add_feed_links() {
+	// Remove default feed links
+	remove_action('wp_head', 'feed_links', 2);
+	remove_action('wp_head', 'feed_links_extra', 3);
+
+	$feed_url = home_url( '/feed/comic/' );
+	echo '<link rel="alternate" type="application/rss+xml" title="' .
+			 esc_attr( get_bloginfo('name') . ' - Comic Feed' ) .
+			 '" href="' . esc_url( $feed_url ) . '" />' . "\n";
+}
+
 add_shortcode( 'sericomic', 'sericomic_shortcode' );
 
 add_action( 'admin_menu', 'sericomic_admin_menu' );
@@ -152,3 +164,9 @@ add_action( 'rest_api_init', function () {
     'permission_callback' => '__return_true',
   ] );
 } );
+
+add_action( 'init', function () {
+	add_feed( 'comic', 'sericomic_feed' );
+});
+
+add_action( 'wp_head', 'sericomic_add_feed_links', 1 );

@@ -14,41 +14,50 @@ function extract_comic_data( string $chaptersDir ): array {
 	$dirs = list_chapters( $chaptersDir );
 	$chapters = [];
 
-	$has_chapter_zero = null;
-	foreach ( $dirs as $dir ) {
+	$first_chapter = null;
+	foreach ( $dirs as $chapter_i => $dir ) {
 		$title = extract_chapter_title( $chaptersDir . '/' . $dir . '/index.md' );
 		$srcDir = $chaptersDir . '/' . $dir;
 		$files = scandir( $srcDir );
 		$images = [];
 
-		if ( $has_chapter_zero === null ) {
-			$has_chapter_zero = !! preg_match( '/0[^0-9]*$/', $dir );
+		if ( $first_chapter === null ) {
+			$first_chapter = preg_match( '/0[^0-9]*$/', $dir ) ? 0 : 1;
 		}
+		$chapter_id = 'ch' . ( $chapter_i + $first_chapter );
 
-		$has_page_zero = null;
+		$first_page = null;
+		$page_i = 0;
 		foreach ( $files as $file ) {
 			if ( substr( $file, 0, 1 ) === '.' ) {
 				continue;
 			}
 			if ( substr( $file, -4 ) === '.jpg' ) {
-				if ( $has_page_zero === null ) {
-					$has_page_zero = !! preg_match( '/0[^0-9]*$/', $file );
+				if ( $first_page === null ) {
+					$first_page = preg_match( '/0[^0-9]*$/', $file ) ? 0 : 1;
 				}
+				$page_id = 'p' . ( $page_i + $first_page );
+				if ( $page_id === 'p0' ) $page_id = '';
+				$page_i++;
+
 				$filePath = $srcDir . '/' . $file;
 				$size = getimagesize( $filePath );
 				$images[] = [
-					'file' => basename( $file ),
+					'file' => $file,
+					'img' => SERICOMIC_UPLOADS_URL . 'chapters/' . $dir . '/' . $file,
 					'width' => $size[0],
 					'height' => $size[1],
+					'lastUpdated' => filemtime( $filePath ),
+					'id' => $chapter_id . '/' . $page_id,
 				];
 			}
 		}
-		
+
 		usort( $images, fn ($a, $b) => strcmp( $a['file'], $b['file'] ) );
-		
+
 		$chapters[] = [
 			'title' => $title,
-			'firstPage' => $has_page_zero ? 0 : 1,
+			'firstPage' => $first_page,
 			'pages' => $images,
 			'dir' => $dir,
 		];
@@ -56,7 +65,7 @@ function extract_comic_data( string $chaptersDir ): array {
 
 	return [
 		'chapters' => $chapters,
-		'firstChapter' => $has_chapter_zero ? 0 : 1,
+		'firstChapter' => $first_chapter,
 		'uploadsUrl' => SERICOMIC_UPLOADS_URL,
 		'comicUrl' => '/' . SERICOMIC_PAGENAME . '/',
 		'lastUpdated' => time(),
@@ -95,7 +104,7 @@ function sericomic_generate_data() {
 		$uploads_dir['basedir'] . '/sericomic/sericomic-data.js',
 		"'use strict';\nconst sericomicData = " . wp_json_encode( $comic_data, JSON_PRETTY_PRINT ) . ";\n"
 	);
-	
+
 	file_put_contents(
 		$uploads_dir['basedir'] . '/sericomic/sericomic-data.json',
 		wp_json_encode( $comic_data, JSON_PRETTY_PRINT )
