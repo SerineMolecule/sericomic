@@ -16,23 +16,21 @@
 if ( ! defined( 'ABSPATH' ) ) die( 'No direct access allowed' );
 
 require_once __DIR__ . '/sericomic-config.php';
-define( 'SERICOMIC_PAGENAME', 'comic' );
 
 function sericomic_shortcode( $atts ) {
-	$upload_dir = wp_upload_dir(); 
 	$page = sericomic_current_page();
 	$chapter_html = null;
 	$cachebuster = '?v=' . $page['lastUpdated'];
 	if ( $page ) {
 		$dir = $page['chapter']['dir'];
 		$file = $page['file'];
-		$url = "/wp-content/uploads/sericomic/chapters/$dir/$file";
+		$url = SERICOMIC_UPLOADS_URL . "chapters/$dir/$file";
 		$chapter_html = '<img class="sericomic-image" src="' . $url . '" width="' . $page['width'] . '" height="' . $page['height'] . '" alt="comic page" />';
 	}
 
 	return '<style>' . file_get_contents( __DIR__ . '/style.css' ) . '</style>' . "\n" .
 		'<div class="sericomic">' . ($chapter_html ?? '<div class="sericomic-buttonbar"><p><select class="sericomic-chapters" value="ch1"><option value="ch1" selected="">Chapter 1 - Chapter</option></select> <select class="sericomic-pages" value="ch1"><option value="ch1" selected="">Page 1</option></select></p><button disabled="" class="sericomic-disabledbutton"><i aria-hidden="true" class="fas fa-chevron-left"></i> Previous Page</button> <button class="sericomic-button" data-page="ch1/p2">Next Page <i aria-hidden="true" class="fas fa-chevron-right"></i></button></div><p>[Comic goes here]</p>') . '</div>' . "\n" .
-		'<script src="' . esc_url( str_replace( 'http:', '', $upload_dir['baseurl'] ) . '/sericomic/sericomic-data.js' . $cachebuster ) . '"></script>' . "\n" .
+		'<script src="' . esc_url( SERICOMIC_UPLOADS_URL . 'sericomic-data.js' . $cachebuster ) . '"></script>' . "\n" .
 		'<script src="' . esc_url( plugins_url( '/sericomic-viewer.js?', __FILE__ ) ) . '"></script>' . "\n" .
 		'<script>const sericomic = new Sericomic(document.querySelector(\'.sericomic\'), sericomicData);</script>';
 }

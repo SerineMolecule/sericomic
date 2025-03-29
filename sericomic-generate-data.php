@@ -2,6 +2,8 @@
 
 if ( ! defined( 'ABSPATH' ) ) die( 'No direct access allowed' );
 
+require_once __DIR__ . '/sericomic-config.php';
+
 function list_chapters( string $chaptersDir ): array {
 	$dirs = array_filter( scandir( $chaptersDir ), fn ( $dir ) => strpos( $dir, '.' ) === false );
 	sort( $dirs );
@@ -55,6 +57,8 @@ function extract_comic_data( string $chaptersDir ): array {
 	return [
 		'chapters' => $chapters,
 		'firstChapter' => $has_chapter_zero ? 0 : 1,
+		'uploadsUrl' => SERICOMIC_UPLOADS_URL,
+		'comicUrl' => '/' . SERICOMIC_PAGENAME . '/',
 		'lastUpdated' => time(),
 	];
 }

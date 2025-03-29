@@ -14,10 +14,9 @@
  * @property {ComicChapter[]} chapters
  * @property {number} firstChapter
  * @property {number} lastUpdated
+ * @property {string} comicUrl
+ * @property {string} uploadsUrl
  */
-
-const SERICOMIC_URL_PREFIX = '/comic/';
-const SERICOMIC_UPLOADS_URL = '/wp-content/uploads/sericomic/';
 
 class Sericomic {
 	/** @type {HTMLDivElement} */
@@ -27,6 +26,10 @@ class Sericomic {
 	singlePage = true;
 	chapter = 0;
 	page = 0;
+	/** @type {string} */
+	comicUrl;
+	/** @type {string} */
+	uploadsUrl;
 	/**
 	 * @param {HTMLDivElement} div
 	 * @param {ComicData} data
@@ -34,6 +37,8 @@ class Sericomic {
 	constructor(div, data) {
 		this.div = div;
 		this.data = data;
+		this.comicUrl = data.comicUrl;
+		this.uploadsUrl = data.uploadsUrl;
 
 		this.div.addEventListener('change', this.onChange);
 		this.div.addEventListener('click', this.onClick);
@@ -85,8 +90,8 @@ class Sericomic {
 		// if (button) this.goTo(button.dataset.page);
 
 		const button = ev.target.closest('a');
-		if (button && button.getAttribute('href')?.startsWith(SERICOMIC_URL_PREFIX)) {
-			this.goTo(button.getAttribute('href').slice(SERICOMIC_URL_PREFIX.length));
+		if (button && button.getAttribute('href')?.startsWith(this.comicUrl)) {
+			this.goTo(button.getAttribute('href').slice(this.comicUrl.length));
 			ev.preventDefault();
 			ev.stopImmediatePropagation();
 		}
@@ -125,8 +130,8 @@ class Sericomic {
 	}
 	handleNavigation(pageid = null) {
 		if (pageid === null) {
-			if (location.pathname.startsWith(SERICOMIC_URL_PREFIX)) {
-				pageid = location.pathname.slice(SERICOMIC_URL_PREFIX.length);
+			if (location.pathname.startsWith(this.comicUrl)) {
+				pageid = location.pathname.slice(this.comicUrl.length);
 			}
 		}
 		if (pageid === '') {
@@ -142,7 +147,7 @@ class Sericomic {
 			}
 		}
 		if (pageid !== this.getPageid()) {
-			history.replaceState({}, '', `${SERICOMIC_URL_PREFIX}${this.getPageid()}`);
+			history.replaceState({}, '', `${this.comicUrl}${this.getPageid()}`);
 		}
 		this.render();
 	}
@@ -165,7 +170,7 @@ class Sericomic {
 	}
 	goTo(pageid) {
 		if (!pageid) return;
-		history.pushState({}, '', `${SERICOMIC_URL_PREFIX}${pageid}`);
+		history.pushState({}, '', `${this.comicUrl}${pageid}`);
 		this.handleNavigation(pageid);
 	}
 	img(pageid = this.getPageid()) {
@@ -180,7 +185,7 @@ class Sericomic {
 		const [chapter, page] = this.parsePageid(pageid);
 		const pageData = this.data.chapters[chapter].pages[page];
 		const cachebuster = `?v=${this.data.lastUpdated}`;
-		const url = `${SERICOMIC_UPLOADS_URL}chapters/${this.data.chapters[chapter].dir}/${pageData.file}${cachebuster}`;
+		const url = `${this.uploadsUrl}chapters/${this.data.chapters[chapter].dir}/${pageData.file}${cachebuster}`;
 		return url;
 	}
 	preloadImg(url) {
@@ -205,9 +210,9 @@ class Sericomic {
 		// return `<button class="sericomic-button" data-page="${pageid}">${text}</button>`;
 		const ariaLabelAttr = ariaLabel ? `aria-label="${ariaLabel}"` : '';
 		if (!pageid || pageid === this.getPageid()) {
-			return `<div class="wp-block-button"><a class="wp-block-button__link has-contrast-color has-accent-4-background-color wp-element-button sericomic-disabledbutton" href="${SERICOMIC_URL_PREFIX}${this.getPageid()}"${ariaLabelAttr}>${text}</a></div>`;
+			return `<div class="wp-block-button"><a class="wp-block-button__link has-contrast-color has-accent-4-background-color wp-element-button sericomic-disabledbutton" href="${this.comicUrl}${this.getPageid()}"${ariaLabelAttr}>${text}</a></div>`;
 		}
-		return `<div class="wp-block-button"><a class="wp-block-button__link wp-element-button sericomic-button" href="${SERICOMIC_URL_PREFIX}${pageid}"${ariaLabelAttr}>${text}</a></div>`;
+		return `<div class="wp-block-button"><a class="wp-block-button__link wp-element-button sericomic-button" href="${this.comicUrl}${pageid}"${ariaLabelAttr}>${text}</a></div>`;
 	}
 	renderChapters() {
 		let html = '';
